@@ -1,0 +1,5 @@
+{
+  "user1": ["CREDIT", "DEBIT", "ADMIN"],
+  "user2": ["CREDIT", "DEBIT"],
+  "user3": ["ADMIN"]
+}

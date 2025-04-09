@@ -1,0 +1,5 @@
+start cmd /k "cd auth && mvn spring-boot:run"
+start cmd /k "cd credit && mvn spring-boot:run"
+start cmd /k "cd debit && mvn spring-boot:run"
+start cmd /k "cd admin && mvn spring-boot:run"
+start cmd /k "cd api-gateway && mvn spring-boot:run"

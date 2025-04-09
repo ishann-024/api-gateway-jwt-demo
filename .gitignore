@@ -1,0 +1,15 @@
+# Ignore build directories
+**/target/
+**/.idea/
+**/*.iml
+
+# Ignore logs
+*.log
+
+# Ignore OS/system files
+.DS_Store
+
+# Ignore environment/config
+.env
+*.properties
+*.yml
