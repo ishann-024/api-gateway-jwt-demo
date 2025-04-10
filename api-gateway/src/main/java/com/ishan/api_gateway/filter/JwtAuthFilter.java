@@ -28,6 +28,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
+    private final List<String> publicPaths = List.of(
+            "/eureka", "/eureka/", "/eureka/**",
+            "/actuator", "/actuator/**",
+            "/auth/login", "/auth/register"
+    );
+
     @PostConstruct
     public void init() {
         log.info("✅ JwtAuthFilter initialized");
@@ -36,9 +42,17 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
+        String path = request.getPath().toString();
+
+        // Bypass auth for public endpoints
+        if (isPublicPath(path)) {
+            log.info("🔓 Public path accessed: {}, bypassing JWT check", path);
+            return chain.filter(exchange);
+        }
+
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-        log.info("🔐 Incoming request path: {}", request.getPath());
+        log.info("🔐 Incoming request path: {}", path);
         log.info("🔐 Authorization header: {}", authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -77,6 +91,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         }
     }
 
+    private boolean isPublicPath(String path) {
+        return publicPaths.stream().anyMatch(path::startsWith);
+    }
+
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -88,6 +106,6 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1; // Ensures it runs BEFORE RoleBasedAccessFilter
+        return -1; // Runs before RoleBasedAccessFilter
     }
 }

@@ -23,6 +23,12 @@ public class RoleBasedAccessFilter implements GlobalFilter, Ordered {
 
     private final Logger log = LoggerFactory.getLogger(RoleBasedAccessFilter.class);
 
+    private final List<String> publicPaths = List.of(
+            "/eureka", "/eureka/", "/eureka/**",
+            "/actuator", "/actuator/**",
+            "/auth/login", "/auth/register"
+    );
+
     @PostConstruct
     public void init() {
         log.info("✅ RoleBasedAccessFilter initialized");
@@ -32,6 +38,11 @@ public class RoleBasedAccessFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().toString();
+
+        if (isPublicPath(path)) {
+            log.info("🔓 Public path accessed: {}, bypassing Role check", path);
+            return chain.filter(exchange);
+        }
 
         String rolesHeader = request.getHeaders().getFirst("X-Roles");
         List<String> roles = rolesHeader != null ? Arrays.asList(rolesHeader.split(",")) : List.of();
@@ -56,6 +67,10 @@ public class RoleBasedAccessFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange);
     }
 
+    private boolean isPublicPath(String path) {
+        return publicPaths.stream().anyMatch(path::startsWith);
+    }
+
     private Mono<Void> forbidden(ServerWebExchange exchange, String message) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.FORBIDDEN);
@@ -66,6 +81,6 @@ public class RoleBasedAccessFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return 0; // Run AFTER JwtAuthFilter
+        return 0; // Runs after JwtAuthFilter
     }
 }
